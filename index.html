@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JavaScript Calculator - Sheldon Mbuh</title>
 <style>
+  * { box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; background: #0f1e3a; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; }
-  .calc { background: #ffffff; border-radius: 12px; padding: 1.2rem; width: 300px; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+  .calc { background: #ffffff; border-radius: 12px; padding: 1.2rem; width: min(calc(100% - 2rem), 338px); box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
   #display { background: #101828; color: #fff; font-size: 2rem; text-align: right; padding: 0.9rem; border-radius: 8px; min-height: 2.6rem; word-wrap: break-word; }
   .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.8rem; }
   button { font-size: 1.15rem; padding: 0.8rem 0; border: 0; border-radius: 8px; background: #eef2f7; cursor: pointer; }
@@ -16,15 +17,15 @@
 </style>
 </head>
 <body>
-<div class="calc">
+<main class="calc" aria-label="JavaScript calculator">
   <div id="display" aria-live="polite">0</div>
   <div class="keys">
-    <button data-action="clear" class="op">C</button>
-    <button data-action="back" class="op">&#8592;</button>
-    <button data-value="%" class="op">%</button>
+    <button data-action="clear" class="op" aria-label="Clear">C</button>
+    <button data-action="back" class="op" aria-label="Backspace">&#8592;</button>
+    <button data-value="%" class="op" aria-label="Remainder">%</button>
     <button data-value="/" class="op">/</button>
     <button data-value="7">7</button><button data-value="8">8</button><button data-value="9">9</button>
-    <button data-value="*" class="op">x</button>
+    <button data-value="*" class="op" aria-label="Multiply">x</button>
     <button data-value="4">4</button><button data-value="5">5</button><button data-value="6">6</button>
     <button data-value="-" class="op">-</button>
     <button data-value="1">1</button><button data-value="2">2</button><button data-value="3">3</button>
@@ -32,8 +33,39 @@
     <button data-value="0">0</button><button data-value=".">.</button>
     <button data-action="equals" class="eq">=</button>
   </div>
-</div>
+</main>
 <script>
+  function calculate(expression) {
+    const number = /[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?/iy;
+    let position = 0;
+
+    function readNumber() {
+      number.lastIndex = position;
+      const match = number.exec(expression);
+      if (!match) throw new Error("Expected a number");
+      position = number.lastIndex;
+      return Number(match[0]);
+    }
+
+    let total = 0;
+    let term = readNumber();
+    while (position < expression.length) {
+      const operator = expression[position++];
+      const next = readNumber();
+      switch (operator) {
+        case "+": total += term; term = next; break;
+        case "-": total += term; term = -next; break;
+        case "*": term *= next; break;
+        case "/": term /= next; break;
+        case "%": term %= next; break;
+        default: throw new Error("Unknown operator");
+      }
+    }
+    const result = total + term;
+    if (!Number.isFinite(result)) throw new Error("Non-finite result");
+    return Number(result.toPrecision(12));
+  }
+
   const display = document.getElementById("display");
   let expr = "";
   function render() { display.textContent = expr === "" ? "0" : expr.replaceAll("*", "x"); }
@@ -46,15 +78,15 @@
       else if (action === "back") { expr = expr.slice(0, -1); }
       else if (action === "equals") {
         try {
-          if (!/^[0-9+\-*/. %]+$/.test(expr)) throw new Error("bad input");
-          const result = Function("return (" + expr + ")")();
-          expr = String(Math.round(result * 1e10) / 1e10);
+          expr = String(calculate(expr));
         } catch (e) { expr = ""; display.textContent = "Error"; return; }
       }
       render();
     });
   });
   document.addEventListener("keydown", function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+    if (e.key === "Enter" || e.key === "Backspace") e.preventDefault();
     if (/^[0-9+\-*/.%]$/.test(e.key)) { expr += e.key; render(); }
     else if (e.key === "Enter" || e.key === "=") { document.querySelector('[data-action="equals"]').click(); }
     else if (e.key === "Backspace") { expr = expr.slice(0, -1); render(); }
