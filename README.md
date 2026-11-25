@@ -5,12 +5,12 @@ A working calculator built with plain HTML, CSS, and JavaScript. Click the keys 
 ## What this project shows
 
 - DOM event handling for both mouse and keyboard input
-- Input validation before any calculation runs
+- An arithmetic parser that applies operator precedence and reports invalid or non-finite results
 - Clean state handling: one expression string, one render function, no framework
 
 ## Run it
 
-Open `index.html` in any browser. Keys: digits and operators type, Enter calculates, Backspace deletes, Escape clears.
+Open `index.html` in any browser. Keys: digits and operators type, Enter calculates, Backspace deletes, Escape clears. The `%` key calculates the remainder.
 
 ## Why it exists
 
